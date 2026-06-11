@@ -1,0 +1,58 @@
+data social;
+    input video $ group $ views likes shares;
+    datalines;
+video1 college  113  1   0  
+video1 yonsei   198  1   0
+video1 pharmacy 331 52  49
+video2 college  152  1   1
+video2 yonsei   171 18   1
+video2 pharmacy 315 40   3
+video3 college   14  1   1
+video3 yonsei   195  1   0
+video3 pharmacy 287 55  34
+video4 college   12  1   1
+video4 yonsei   405  2   0
+video4 pharmacy 539 62  51
+;
+run;
+
+proc means data=social n mean std min max;
+    class group;
+    var views likes shares;
+run;
+
+proc univariate data=social normal;
+    class group;
+    var views likes shares;
+    histogram;
+run;
+
+proc glm data=social;
+    class video group;
+    model views = video group;
+    lsmeans group / pdiff adjust=tukey cl;
+    means group / hovtest=levene; 
+    output out=resid_v r=res_views p=pred_views;
+run;
+quit;
+
+proc glm data=social;
+    class video group;
+    model likes = video group;
+    lsmeans group / pdiff adjust=tukey cl;
+run;
+quit;
+
+proc glm data=social;
+    class video group;
+    model shares = video group;
+    lsmeans group / pdiff adjust=tukey cl;
+run;
+quit;
+
+proc univariate data=resid_v normal;
+    var res_views;
+    histogram / normal;
+    qqplot / normal(mu=est sigma=est);
+run;
+
