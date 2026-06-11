@@ -1,0 +1,49 @@
+/*  young(13-24) / mid(25-34) / old(35+)                        */
+data age_raw;
+    input group $ video $ views a13_17 a18_24 a25_34 a35_44 a45_54 a55_64;
+    young = round(views * (a13_17 + a18_24) / 100);
+    mid   = round(views *  a25_34            / 100);
+    old   = round(views * (a35_44 + a45_54 + a55_64) / 100);
+    datalines;
+yonsei   v1 198 1.0 51.0 35.4  8.3 2.6 1.0
+yonsei   v2 171 6.5 49.2 31.4 10.3 2.2 0
+yonsei   v3 195 4.6 43.8 41.0  8.2 1.0 0
+pharmacy v1 331 0   65.1 26.3  5.5 2.1 0.6
+pharmacy v2 315 0   72.9 24.8  1.0 0.3 0.7
+pharmacy v3 287 0   68.9 29.6  1.4 0   0
+pharmacy v4 539 0   67.9 29.8  2.3 0   0
+college  v1 113 0   67.0 29.5  2.7 0.9 0
+college  v2 152 0.7 66.4 28.1  4.8 0   0
+;
+run;
+
+proc sql;
+    create table age_agg as
+    select group,
+           sum(young) as Young_13_24,
+           sum(mid)   as Mid_25_34,
+           sum(old)   as Old_35plus
+    from age_raw
+    group by group;
+quit;
+
+proc print data=age_agg; run;
+
+data age_long;
+    set age_agg;
+    age_group='13-24'; count=Young_13_24; output;
+    age_group='25-34'; count=Mid_25_34;   output;
+    age_group='35+';   count=Old_35plus;  output;
+    keep group age_group count;
+run;
+
+proc freq data=age_long;
+    tables group*age_group / chisq expected nocol nopercent;
+    weight count;
+run;
+
+proc sgplot data=age_long;
+    vbar group / response=count group=age_group stat=percent;
+    yaxis label='Percentage (%)';
+    title 'Age Distribution by Group';
+run;
